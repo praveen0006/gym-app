@@ -2,7 +2,7 @@
 
 A comprehensive, AI-powered personal health and fitness dashboard. This application integrates with **Google Fit** to track your daily activity, allows you to log nutrition and weight, and uses **AI Vision (Gemini 2.0)** to analyze your physique progress photos.
 
-![Dashboard Preview](/public/window.svg)
+
 
 ## 🌟 Key Features
 

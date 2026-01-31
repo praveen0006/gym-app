@@ -8,6 +8,7 @@ import ActivityChart from './ActivityChart'
 import ChatWindow from './ChatWindow'
 import HealthScoreCard from './HealthScoreCard'
 import DeleteDataButton from './DeleteDataButton'
+import BodyMeasurementsCard from './measurements/BodyMeasurementsCard'
 
 export default function DashboardClient({ userEmail }: { userEmail: string }) {
     const supabase = createClient()
@@ -283,7 +284,10 @@ export default function DashboardClient({ userEmail }: { userEmail: string }) {
                 </div>
 
                 {/* Health Score */}
-                <HealthScoreCard />
+                <div className="flex flex-col gap-6">
+                    <HealthScoreCard />
+                    <BodyMeasurementsCard />
+                </div>
 
                 {/* Weight Progress */}
                 <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:col-span-2 flex flex-col justify-between">

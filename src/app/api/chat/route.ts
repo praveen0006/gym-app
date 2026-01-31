@@ -36,20 +36,63 @@ export async function POST(req: Request) {
             meals: acc.meals + 1
         }), { calories: 0, protein: 0, carbs: 0, fats: 0, meals: 0 });
 
-        // Build context
+        const { data: latestMeasurements } = await supabase
+            .from('body_measurements')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('date', { ascending: false })
+            .limit(10); // Get recent ones to pick latest distinct parts
+
+        // --- FETCH HEALTH SCORE (Simplified logic for context) ---
+        // For accurate score, we should ideally reuse the logic from health-score route, 
+        // but for context, a rough fetch or simple re-calc is fine. 
+        // Let's re-fetch the raw ingredients quickly.
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(new Date().getDate() - 7);
+        const { data: weeklyActivity } = await supabase
+            .from('daily_activity')
+            .select('steps, heart_minutes')
+            .eq('user_id', user.id)
+            .gte('date', sevenDaysAgo.toISOString().split('T')[0]);
+
+        const totalSteps = weeklyActivity?.reduce((sum, d) => sum + (d.steps || 0), 0) || 0;
+        const totalHeartPoints = weeklyActivity?.reduce((sum, d) => sum + (d.heart_minutes || 0), 0) || 0;
+        // Simple context string for score
+        const activityScore = Math.min(60, Math.round(((totalSteps / 70000) * 40) + ((totalHeartPoints / 150) * 20)));
+        // Note: Full score calculation is complex, offering the activity portion is good enough for context.
+
+        // --- BUILD CONTEXT ---
         let contextPart = '';
+
+        // 1. Daily Activity
         if (activity) {
-            contextPart += `Activity: ${activity.steps || 0} steps, ${Math.round(activity.calories || 0)} calories burned, ${activity.heart_minutes || 0} heart points. `;
+            contextPart += `Today's Activity: ${activity.steps || 0} steps, ${Math.round(activity.calories || 0)} cal burned. `;
         }
+
+        // 2. Nutrition
         if (nutritionTotals && nutritionTotals.meals > 0) {
-            contextPart += `Nutrition today: ${nutritionTotals.calories} cal consumed, ${Math.round(nutritionTotals.protein)}g protein, ${Math.round(nutritionTotals.carbs)}g carbs, ${Math.round(nutritionTotals.fats)}g fats (${nutritionTotals.meals} meals logged).`;
+            contextPart += `Nutrition Today: ${nutritionTotals.calories} cal, ${Math.round(nutritionTotals.protein)}g protein. `;
         }
+
+        // 3. Body Measurements (Latest distinct)
+        if (latestMeasurements && latestMeasurements.length > 0) {
+            const uniqueParts: Record<string, any> = {};
+            latestMeasurements.forEach(m => {
+                if (!uniqueParts[m.body_part]) uniqueParts[m.body_part] = m;
+            });
+            const stats = Object.values(uniqueParts).map(m => `${m.body_part}: ${m.size_value} ${m.unit}`).join(', ');
+            contextPart += `Body Stats: ${stats}. `;
+        }
+
+        // 4. Health Status
+        contextPart += `Weekly Activity Score: ${activityScore}/60 (Steps: ${totalSteps}). `;
+
         if (!contextPart) {
             contextPart = 'No activity or nutrition data synced for today.';
         }
 
         const systemMessage = `You are a friendly AI Health Coach. Give personalized, encouraging health and nutrition advice.
-Keep responses concise (2-3 sentences). Use emojis sparingly.
+Keep responses concise (2-3 sentences).
 User Context: ${contextPart}`;
 
         // Sanitize messages

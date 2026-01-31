@@ -11,11 +11,13 @@ export async function GET(request: Request) {
         const supabase = await createClient()
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
-            const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
             const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || origin
+            console.log('Redirecting to:', `${baseUrl}${next}`)
             return NextResponse.redirect(`${baseUrl}${next}`)
         }
         console.error('Supabase Auth Code Exchange Error:', error)
+        console.error('Code used:', code)
+        console.error('Origin:', origin)
     }
 
     // return the user to an error page with instructions

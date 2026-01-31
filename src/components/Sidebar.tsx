@@ -23,27 +23,32 @@ const navigation = [
     { name: 'Weight', href: '/dashboard/weight', icon: Scale },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+    onClose?: () => void
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
     const pathname = usePathname()
 
     return (
-        <div className="flex h-screen w-64 flex-col border-r border-slate-200 bg-white shadow-sm">
+        <div className="flex h-screen w-full flex-col border-r border-slate-200 bg-white shadow-sm md:w-64">
             <div className="flex h-16 items-center px-6">
-                <div className="flex items-center gap-2 font-bold text-xl text-slate-800">
+                <Link href="/dashboard" onClick={onClose} className="flex items-center gap-2 font-bold text-xl text-slate-800 transition-opacity hover:opacity-80">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
                         <Activity size={20} />
                     </div>
                     <span>FitBot</span>
-                </div>
+                </Link>
             </div>
 
-            <nav className="flex-1 space-y-1 px-3 py-4">
+            <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
                 {navigation.map((item) => {
                     const isActive = pathname === item.href
                     return (
                         <Link
                             key={item.name}
                             href={item.href}
+                            onClick={onClose}
                             className={clsx(
                                 'group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                                 isActive
